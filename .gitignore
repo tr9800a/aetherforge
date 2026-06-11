@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Go
+backend/aetherforge-server
+*.test
+*.out
+
+# Unreal Engine — generated/build artifacts
+unreal/AetherForge/Binaries/
+unreal/AetherForge/Intermediate/
+unreal/HostProject/Binaries/
+unreal/HostProject/DerivedDataCache/
+unreal/HostProject/Intermediate/
+unreal/HostProject/Saved/
+
+# The host project's plugin copy is a packaged build artifact of unreal/AetherForge
+# (produced by RunUAT BuildPlugin); the source of truth lives in unreal/AetherForge.
+unreal/HostProject/Plugins/AetherForge/
+
+# IDE
+*.xcworkspace
+*.xcodeproj
+.idea/
+.vscode/

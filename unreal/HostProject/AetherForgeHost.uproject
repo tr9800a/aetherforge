@@ -1,0 +1,12 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.7",
+	"Category": "",
+	"Description": "Minimal host project for compiling and testing the AetherForge editor plugin.",
+	"Plugins": [
+		{
+			"Name": "AetherForge",
+			"Enabled": true
+		}
+	]
+}
