@@ -25,7 +25,7 @@ FString FAetherForgeSidecarManager::GetSidecarBinaryPath()
 		return FString();
 	}
 
-	FString BinaryName = TEXT("aetherforged");
+	FString BinaryName = TEXT("aetherforge-server");
 #if PLATFORM_WINDOWS
 	BinaryName += TEXT(".exe");
 #endif
@@ -62,7 +62,8 @@ void FAetherForgeSidecarManager::Launch(const int32 Port)
 		return;
 	}
 
-	const FString Params = FString::Printf(TEXT("--port %d"), Port);
+	// The Go server takes a full listen address; keep it loopback-only (spec section 2).
+	const FString Params = FString::Printf(TEXT("-addr 127.0.0.1:%d"), Port);
 	const FString WorkingDirectory = FPaths::GetPath(BinaryPath);
 
 	UE_LOG(LogAetherForgeSidecar, Log, TEXT("Launching sidecar: %s %s"), *BinaryPath, *Params);

@@ -25,6 +25,8 @@ struct FAetherForgeSpawnStats
 	int32 PendingCount = 0;
 	double AssetsPerSecond = 0.0;
 	double LastSpawnTickMs = 0.0;
+	/** Worst spawn tick of the active generation — the performance contract's witness. */
+	double MaxSpawnTickMs = 0.0;
 };
 
 /**

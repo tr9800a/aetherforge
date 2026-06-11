@@ -7,6 +7,10 @@
 		{
 			"Name": "AetherForge",
 			"Enabled": true
+		},
+		{
+			"Name": "PythonScriptPlugin",
+			"Enabled": true
 		}
 	]
 }

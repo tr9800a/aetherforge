@@ -30,7 +30,7 @@ Key documents:
 
 - **Backend:** Go 1.26+
 - **Plugin:** Unreal Engine 5.7 (installed via Epic Games Launcher) and full Xcode on macOS
-- **Phase 4+ (not yet wired):** a local LLM via [Ollama](https://ollama.com)
+- **LLM:** a local model via [Ollama](https://ollama.com) (`ollama pull llama3.2:3b`); optional — the `-llm=fake` and `-replay` backends run without one
 
 ## Quick start
 
@@ -43,7 +43,15 @@ go build -o /tmp/aetherforge-server ./cmd/aetherforge-server
 /tmp/aetherforge-server                    # listens on ws://127.0.0.1:8080 (localhost only)
 ```
 
-The server currently runs the Phase 1 mock pipeline (a fake LLM returning canned recipes through the real placement engine and streaming protocol).
+LLM backends (`-llm`, default `ollama`):
+
+```sh
+ollama serve & ollama pull llama3.2:3b     # one-time setup for the real LLM
+/tmp/aetherforge-server                    # prompts drive the recipe via the local model
+/tmp/aetherforge-server -llm=fake          # canned recipes, no model needed
+/tmp/aetherforge-server -record ./rec      # capture real recipes to disk...
+/tmp/aetherforge-server -replay ./rec      # ...and replay them deterministically (CI/demos)
+```
 
 ### Plugin
 
@@ -71,11 +79,13 @@ To use the panel interactively: start the backend, open `unreal/HostProject/Aeth
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0 | Contract, fixtures, toolchain proof | ✅ Done — Go and UE suites round-trip the same fixtures |
-| 1 | Go service with mock pipeline + real placement engine | ✅ Done — all tests green, live e2e verified |
-| 2 | Plugin scaffold: panel, sidecar manager, WebSocket client | ✅ Compiles on UE 5.7; protocol tests pass |
-| 3 | Time-budgeted spawning, HISM pools, undo transactions | 🔧 Skeleton written; spawn-budget test + editor verification pending |
-| 4 | Real Ollama LLM client (behind existing `llm.Client` interface) | ⬜ Not started |
-| 5 | Polish: seed variations UI, live stats, demo level | ⬜ Not started |
+| 0 | Contract, fixtures, toolchain proof | Done — Go and UE suites round-trip the same fixtures |
+| 1 | Go service with mock pipeline + real placement engine | Done — all tests green, live e2e verified |
+| 2 | Plugin scaffold: panel, sidecar manager, WebSocket client | Compiles on UE 5.7; protocol tests pass |
+| 3 | Time-budgeted spawning, HISM pools, undo transactions | Done — budget + single-undo verified by automation; live editor session verified |
+| 4 | Real Ollama LLM client + record/replay | Done — prompts drive recipes (schema-constrained); replay verified |
+| 5 | Polish: seed variations UI, live stats, demo level, real art | Not started |
 
-Verified so far: 29 Go test cases (fixture round-trips, placement invariants across 200 seeds, cancellation, hard caps, real-WebSocket e2e), 3 UE automation tests against the same fixtures, a clean UE 5.7 compile, and a live binary-to-binary session streaming 158 assets (plan → 4 chunks → complete).
+Verified so far: the full Go suite (fixture round-trips, placement invariants across 200 seeds, cancellation, hard caps, Ollama client against a stub server, record/replay, real-WebSocket e2e), 4 UE automation tests (same fixtures + the 1,000-asset spawn-budget/undo test, worst tick ~3 ms), a clean UE 5.7 compile, a live editor session populating a level via the auto-launched sidecar, and live LLM runs where contrasting prompts produce faithful recipes ("exactly two large dogs" → `dog_large: 2`; "a dozen boulders, nothing else" → `boulder: 12` only).
+
+The manifest ships with placeholder engine shapes (cylinders for trees, cones for creatures, etc.); bind real meshes in `DA_AetherForgeManifest` to change what spawns — no code involved.

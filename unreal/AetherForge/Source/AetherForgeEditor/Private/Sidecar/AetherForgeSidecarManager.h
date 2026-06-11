@@ -24,7 +24,7 @@ enum class EAetherForgeSidecarState : uint8
 };
 
 /**
- * Launches, health-checks, and terminates the Go sidecar (`aetherforged`) via
+ * Launches, health-checks, and terminates the Go sidecar (`aetherforge-server`) via
  * FPlatformProcess. The plugin owns the sidecar lifecycle end to end — designers never
  * touch a terminal — and never leaks the child process across editor sessions.
  *
@@ -38,7 +38,7 @@ public:
 	~FAetherForgeSidecarManager();
 
 	/**
-	 * Launch the sidecar binary with `--port <Port>`. No-op if already running.
+	 * Launch the sidecar binary with `-addr 127.0.0.1:<Port>`. No-op if already running.
 	 * Transitions to Running on success, BinaryMissing/Dead on failure, and starts a
 	 * 1 Hz watchdog that demotes to Dead if the process exits behind our back.
 	 */
@@ -58,7 +58,7 @@ public:
 	const FString& GetLastError() const { return LastError; }
 
 	/**
-	 * Expected binary location: <PluginDir>/Binaries/Sidecar/aetherforged[.exe].
+	 * Expected binary location: <PluginDir>/Binaries/Sidecar/aetherforge-server[.exe].
 	 * The Go build drops its output here (see plugin README).
 	 */
 	static FString GetSidecarBinaryPath();

@@ -2,9 +2,9 @@
 // managed by the AetherForge UE5 editor plugin. It serves the v1 WebSocket
 // protocol on 127.0.0.1:8080 (localhost only).
 //
-// Phase 1 scaffold: the pipeline runs against the canned FakeLLM (mock
-// recipes, real deterministic placement). The Ollama-backed llm.Client
-// implementation slots in behind the same interface in Phase 4.
+// LLM backends (-llm): "ollama" (default; local model via Ollama with
+// schema-constrained output) or "fake" (canned recipes, no model needed).
+// -record/-replay capture and replay recipes for deterministic demos and CI.
 package main
 
 import (
@@ -17,11 +17,31 @@ import (
 
 func main() {
 	addr := flag.String("addr", server.DefaultAddr, "listen address (localhost only)")
+	llmMode := flag.String("llm", "ollama", "llm backend: ollama|fake")
+	ollamaURL := flag.String("ollama-url", llm.DefaultOllamaURL, "Ollama server base URL")
+	ollamaModel := flag.String("ollama-model", llm.DefaultOllamaModel, "Ollama model name (must be pulled)")
+	recordDir := flag.String("record", "", "record LLM recipes to this directory")
+	replayDir := flag.String("replay", "", "replay LLM recipes from this directory (no model needed; overrides -llm)")
 	flag.Parse()
 
-	// Phase 1: fake LLM with canned scene recipes. Swap for the Ollama
-	// client (Phase 4) without touching the orchestrator or server.
-	var client llm.Client = &llm.FakeLLM{}
+	var client llm.Client
+	switch {
+	case *replayDir != "":
+		client = &llm.ReplayClient{Dir: *replayDir}
+		log.Printf("llm: replaying recorded recipes from %s", *replayDir)
+	case *llmMode == "ollama":
+		client = &llm.OllamaClient{BaseURL: *ollamaURL, Model: *ollamaModel}
+		log.Printf("llm: ollama at %s, model %s", *ollamaURL, *ollamaModel)
+	case *llmMode == "fake":
+		client = &llm.FakeLLM{}
+		log.Printf("llm: fake (canned recipes)")
+	default:
+		log.Fatalf("unknown -llm mode %q (want ollama or fake)", *llmMode)
+	}
+	if *recordDir != "" {
+		client = &llm.RecordingClient{Inner: client, Dir: *recordDir}
+		log.Printf("llm: recording recipes to %s", *recordDir)
+	}
 
 	srv := server.New(*addr, client)
 	if err := srv.ListenAndServe(); err != nil {

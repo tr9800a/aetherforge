@@ -3,7 +3,7 @@
 GenAI world-building for Unreal Engine 5: type a natural-language prompt, and the plugin
 streams a procedurally generated, seeded, fully undoable environment into your level. The
 heavy lifting (LLM recipe generation, deterministic placement) happens in a local Go
-sidecar (`aetherforged`) that this plugin launches and manages — designers never touch a
+sidecar (`aetherforge-server`) that this plugin launches and manages — designers never touch a
 terminal.
 
 - Spec of record: [`docs/superpowers/specs/2026-06-10-aetherforge-prd-design.md`](../../docs/superpowers/specs/2026-06-10-aetherforge-prd-design.md)
@@ -33,20 +33,25 @@ The plugin launches the Go orchestration service from a fixed location inside th
 directory:
 
 ```
-AetherForge/Binaries/Sidecar/aetherforged        (macOS / Linux)
-AetherForge/Binaries/Sidecar/aetherforged.exe    (Windows)
+AetherForge/Binaries/Sidecar/aetherforge-server        (macOS / Linux)
+AetherForge/Binaries/Sidecar/aetherforge-server.exe    (Windows)
 ```
 
 Build it from the repo's `backend/` tree and copy it there, e.g.:
 
 ```sh
-go build -o unreal/AetherForge/Binaries/Sidecar/aetherforged ./backend/cmd/aetherforge-server
+go build -o unreal/AetherForge/Binaries/Sidecar/aetherforge-server ./backend/cmd/aetherforge-server
 ```
 
-The plugin starts it with `--port 8080`, health-checks it (process watchdog at 1 Hz plus
+The plugin starts it with `-addr 127.0.0.1:8080`, health-checks it (process watchdog at 1 Hz plus
 WebSocket connectability with retries), and terminates it on editor shutdown — it is
 never leaked across editor sessions. If the binary is missing or the process dies, the
 panel shows an explicit error state with a Reconnect button.
+
+The sidecar defaults to the real LLM (`-llm=ollama`), which needs Ollama running locally
+with the model pulled (`ollama serve`, `ollama pull llama3.2:3b`). Without Ollama,
+generations fail with a structured `llm` error in the panel; run the server manually
+with `-llm=fake` for canned recipes instead.
 
 ### Asset manifest
 

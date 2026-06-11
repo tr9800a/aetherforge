@@ -259,6 +259,7 @@ bool FAetherForgeSpawner::SpawnTick(float /*DeltaTime*/)
 	}
 
 	Stats.LastSpawnTickMs = (FPlatformTime::Seconds() - TickStart) * 1000.0;
+	Stats.MaxSpawnTickMs = FMath::Max(Stats.MaxSpawnTickMs, Stats.LastSpawnTickMs);
 	Stats.PendingCount = NumPendingEntries();
 	const double Elapsed = FPlatformTime::Seconds() - GenerationStartSeconds;
 	Stats.AssetsPerSecond = Elapsed > 0.0 ? Stats.SpawnedCount / Elapsed : 0.0;
