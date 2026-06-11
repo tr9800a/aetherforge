@@ -1,0 +1,13 @@
+{
+  "protocol_version": 1,
+  "type": "plan",
+  "generation_id": "gen-7f3a9c12",
+  "seed": 1337,
+  "total_assets": 142,
+  "categories": {
+    "deciduous_tree": 80,
+    "shrub": 55,
+    "boulder": 5,
+    "dog_large": 2
+  }
+}

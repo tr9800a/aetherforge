@@ -1,0 +1,8 @@
+{
+  "protocol_version": 1,
+  "type": "error",
+  "generation_id": "gen-7f3a9c12",
+  "code": "llm_invalid_output",
+  "message": "LLM output failed schema validation after one retry: categories.cactus is not a key in the advertised manifest",
+  "recoverable": true
+}

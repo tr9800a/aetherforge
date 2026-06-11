@@ -1,0 +1,67 @@
+{
+  "protocol_version": 1,
+  "type": "chunk",
+  "generation_id": "gen-7f3a9c12",
+  "assets": [
+    {
+      "category": "deciduous_tree",
+      "transform": {
+        "location": {"x": 150.0, "y": -200.0},
+        "yaw": 45.0,
+        "scale": 1.2
+      },
+      "ground_snap": true,
+      "tags": ["flora", "canopy"]
+    },
+    {
+      "category": "deciduous_tree",
+      "transform": {
+        "location": {"x": -1840.5, "y": 2310.25},
+        "yaw": 312.5,
+        "scale": 0.95
+      },
+      "ground_snap": true,
+      "tags": ["flora", "canopy"]
+    },
+    {
+      "category": "shrub",
+      "transform": {
+        "location": {"x": 420.75, "y": -95.5},
+        "yaw": 188.0,
+        "scale": 1.05
+      },
+      "ground_snap": true,
+      "tags": ["flora", "understory"]
+    },
+    {
+      "category": "shrub",
+      "transform": {
+        "location": {"x": -3120.0, "y": -4480.0},
+        "yaw": 12.25,
+        "scale": 0.8
+      },
+      "ground_snap": true,
+      "tags": ["flora", "understory"]
+    },
+    {
+      "category": "boulder",
+      "transform": {
+        "location": {"x": 2980.0, "y": 1175.5},
+        "yaw": 270.0,
+        "scale": 1.4
+      },
+      "ground_snap": true,
+      "tags": ["rock"]
+    },
+    {
+      "category": "dog_large",
+      "transform": {
+        "location": {"x": -60.0, "y": 340.0},
+        "yaw": 95.0,
+        "scale": 1.0
+      },
+      "ground_snap": true,
+      "tags": ["fauna", "creature"]
+    }
+  ]
+}

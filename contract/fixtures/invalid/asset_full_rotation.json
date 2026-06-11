@@ -1,0 +1,19 @@
+{
+  "protocol_version": 1,
+  "type": "chunk",
+  "generation_id": "gen-7f3a9c12",
+  "assets": [
+    {
+      "category": "boulder",
+      "transform": {
+        "location": {"x": 2980.0, "y": 1175.5},
+        "yaw": 270.0,
+        "pitch": 15.0,
+        "roll": -4.5,
+        "scale": 1.4
+      },
+      "ground_snap": true,
+      "tags": ["rock"]
+    }
+  ]
+}

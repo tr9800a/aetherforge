@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "AetherForge",
+	"Description": "GenAI world-building: procedurally generates and populates 3D environments from natural-language prompts via a local Go orchestration sidecar (deterministic placement, seeded reproducibility, undoable streamed spawning).",
+	"Category": "Editor",
+	"CreatedBy": "AetherForge",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "AetherForgeEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}

@@ -1,0 +1,17 @@
+{
+  "protocol_version": 1,
+  "type": "chunk",
+  "generation_id": "gen-7f3a9c12",
+  "assets": [
+    {
+      "category": "deciduous_tree",
+      "transform": {
+        "location": {"x": 150.0, "y": -200.0, "z": 340.0},
+        "yaw": 45.0,
+        "scale": 1.2
+      },
+      "ground_snap": true,
+      "tags": ["flora", "canopy"]
+    }
+  ]
+}

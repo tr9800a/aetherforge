@@ -1,0 +1,17 @@
+{
+  "protocol_version": 1,
+  "type": "chunk",
+  "generation_id": "gen-7f3a9c12",
+  "assets": [
+    {
+      "category": "cactus",
+      "transform": {
+        "location": {"x": 10.0, "y": 20.0},
+        "yaw": 90.0,
+        "scale": 1.0
+      },
+      "ground_snap": true,
+      "tags": ["flora"]
+    }
+  ]
+}

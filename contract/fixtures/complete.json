@@ -1,0 +1,10 @@
+{
+  "protocol_version": 1,
+  "type": "complete",
+  "generation_id": "gen-7f3a9c12",
+  "stats": {
+    "assets": 142,
+    "elapsed_ms": 4815,
+    "llm_ms": 2930
+  }
+}

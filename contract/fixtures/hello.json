@@ -1,0 +1,30 @@
+{
+  "protocol_version": 1,
+  "type": "hello",
+  "manifest": {
+    "deciduous_tree": {
+      "footprint_radius": 250.0,
+      "ground_snap": true,
+      "instanceable": true,
+      "display_name": "Deciduous Tree"
+    },
+    "shrub": {
+      "footprint_radius": 75.0,
+      "ground_snap": true,
+      "instanceable": true,
+      "display_name": "Shrub"
+    },
+    "boulder": {
+      "footprint_radius": 120.0,
+      "ground_snap": true,
+      "instanceable": true,
+      "display_name": "Boulder"
+    },
+    "dog_large": {
+      "footprint_radius": 150.0,
+      "ground_snap": true,
+      "instanceable": false,
+      "display_name": "Large Dog"
+    }
+  }
+}

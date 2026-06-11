@@ -1,0 +1,12 @@
+{
+  "protocol_version": 2,
+  "type": "hello",
+  "manifest": {
+    "shrub": {
+      "footprint_radius": 75.0,
+      "ground_snap": true,
+      "instanceable": true,
+      "display_name": "Shrub"
+    }
+  }
+}
