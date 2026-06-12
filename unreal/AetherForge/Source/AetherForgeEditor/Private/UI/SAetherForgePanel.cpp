@@ -221,6 +221,8 @@ void SAetherForgePanel::BindBackendEvents()
 
 	SidecarStateHandle = Module.GetSidecarManager()->OnStateChanged().AddSP(
 		this, &SAetherForgePanel::HandleSidecarStateChanged);
+	GenerationFinalizedHandle = Module.GetSpawner()->OnGenerationFinalized().AddSP(
+		this, &SAetherForgePanel::HandleGenerationFinalized);
 }
 
 void SAetherForgePanel::UnbindBackendEvents()
@@ -245,6 +247,10 @@ void SAetherForgePanel::UnbindBackendEvents()
 	if (const TSharedPtr<FAetherForgeSidecarManager> Sidecar = Module.GetSidecarManager())
 	{
 		Sidecar->OnStateChanged().Remove(SidecarStateHandle);
+	}
+	if (const TSharedPtr<FAetherForgeSpawner> Spawner = Module.GetSpawner())
+	{
+		Spawner->OnGenerationFinalized().Remove(GenerationFinalizedHandle);
 	}
 }
 
@@ -371,10 +377,11 @@ FText SAetherForgePanel::GetStatsText() const
 {
 	const FAetherForgeSpawnStats& Stats = FAetherForgeEditorModule::Get().GetSpawner()->GetStats();
 	return FText::Format(
-		LOCTEXT("StatsFormat", "{0} spawned | {1} assets/s | spawn tick {2} ms | LLM {3} ms"),
+		LOCTEXT("StatsFormat", "{0} spawned | {1} assets/s | spawn tick {2} ms (worst {3} ms) | LLM {4} ms"),
 		FText::AsNumber(Stats.SpawnedCount),
 		FText::AsNumber(FMath::RoundToInt(Stats.AssetsPerSecond)),
 		FText::AsNumber(Stats.LastSpawnTickMs),
+		FText::AsNumber(Stats.MaxSpawnTickMs),
 		FText::AsNumber(LastLlmMs));
 }
 
@@ -473,6 +480,14 @@ void SAetherForgePanel::HandleComplete(const FAetherForgeCompleteMessage& Comple
 	AppendLog(FString::Printf(TEXT("Complete: %d assets in %lld ms (LLM %lld ms)."),
 		Complete.stats.assets, Complete.stats.elapsed_ms, Complete.stats.llm_ms));
 	SetState(EAetherForgePanelState::ConnectedIdle);
+}
+
+void SAetherForgePanel::HandleGenerationFinalized(const FAetherForgeSpawnStats& SpawnStats)
+{
+	AppendLog(FString::Printf(
+		TEXT("Spawned %d (%d skipped) | %.0f assets/s | worst spawn tick %.2f ms (budget %.1f ms)."),
+		SpawnStats.SpawnedCount, SpawnStats.SkippedCount, SpawnStats.AssetsPerSecond,
+		SpawnStats.MaxSpawnTickMs, FAetherForgeSpawner::SpawnBudgetSeconds * 1000.0));
 }
 
 void SAetherForgePanel::HandleServerError(const FAetherForgeErrorMessage& Error)

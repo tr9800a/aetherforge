@@ -72,6 +72,7 @@ private:
 	void HandleServerError(const FAetherForgeErrorMessage& Error);
 	void HandleProtocolError(const FString& ParseError);
 	void HandleSidecarStateChanged(EAetherForgeSidecarState NewState);
+	void HandleGenerationFinalized(const struct FAetherForgeSpawnStats& SpawnStats);
 
 	// --- helpers -------------------------------------------------------------
 	void StartGeneration(const TOptional<int64>& SeedOverride);
@@ -105,4 +106,5 @@ private:
 	FDelegateHandle ServerErrorHandle;
 	FDelegateHandle ProtocolErrorHandle;
 	FDelegateHandle SidecarStateHandle;
+	FDelegateHandle GenerationFinalizedHandle;
 };

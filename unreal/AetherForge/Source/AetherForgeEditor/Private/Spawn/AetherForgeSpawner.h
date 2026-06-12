@@ -56,6 +56,9 @@ public:
 	/** ~2 ms per editor tick (spec sections 1 and 6). */
 	static constexpr double SpawnBudgetSeconds = 0.002;
 
+	/** Fires on the game thread when a generation's transaction closes; carries its final stats. */
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnGenerationFinalized, const FAetherForgeSpawnStats&);
+
 	~FAetherForgeSpawner();
 
 	/** Register the editor-tick drain loop. Call once after construction. */
@@ -91,6 +94,9 @@ public:
 
 	const FAetherForgeSpawnStats& GetStats() const { return Stats; }
 
+	/** Fires on the game thread; UI listeners log the per-generation performance summary. */
+	FOnGenerationFinalized& OnGenerationFinalized() { return GenerationFinalizedEvent; }
+
 private:
 	/** Per-category state for the active generation. */
 	struct FCategoryRuntime
@@ -125,6 +131,14 @@ private:
 
 	/** Line trace straight down to find terrain Z. Returns false on no hit (=> skip + log). */
 	bool ResolveGroundZ(UWorld* World, double X, double Y, double& OutZ) const;
+
+	/**
+	 * Lift so the bottom of the (scaled) mesh bounds rests on the ground instead of
+	 * the pivot — centered-pivot meshes would otherwise sink halfway into the terrain.
+	 * Returns 0 for non-mesh assets (actor classes are adjusted from actor bounds
+	 * after spawn instead).
+	 */
+	static double BoundsGroundLift(const UObject* Asset, double Scale);
 
 	UHierarchicalInstancedStaticMeshComponent* GetOrCreateHism(const FString& CategoryKey,
 		FCategoryRuntime& Runtime, UStaticMesh* Mesh, UWorld* World);
@@ -163,4 +177,6 @@ private:
 
 	FAetherForgeSpawnStats Stats;
 	double GenerationStartSeconds = 0.0;
+
+	FOnGenerationFinalized GenerationFinalizedEvent;
 };

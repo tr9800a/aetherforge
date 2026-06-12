@@ -9,7 +9,9 @@ package main
 
 import (
 	"flag"
+	"io"
 	"log"
+	"os"
 
 	"aetherforge/backend/internal/llm"
 	"aetherforge/backend/internal/server"
@@ -22,7 +24,20 @@ func main() {
 	ollamaModel := flag.String("ollama-model", llm.DefaultOllamaModel, "Ollama model name (must be pulled)")
 	recordDir := flag.String("record", "", "record LLM recipes to this directory")
 	replayDir := flag.String("replay", "", "replay LLM recipes from this directory (no model needed; overrides -llm)")
+	logFile := flag.String("logfile", "", "also append logs to this file (the UE sidecar manager points this at the project's Saved/Logs)")
 	flag.Parse()
+
+	// The plugin launches the sidecar hidden, so stderr goes nowhere; -logfile
+	// is how a live session stays diagnosable after the fact.
+	if *logFile != "" {
+		f, err := os.OpenFile(*logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+		if err != nil {
+			log.Printf("cannot open -logfile %s: %v (continuing on stderr only)", *logFile, err)
+		} else {
+			defer f.Close()
+			log.SetOutput(io.MultiWriter(os.Stderr, f))
+		}
+	}
 
 	var client llm.Client
 	switch {

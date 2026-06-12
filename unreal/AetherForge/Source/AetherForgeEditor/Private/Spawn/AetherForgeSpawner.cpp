@@ -287,6 +287,11 @@ void FAetherForgeSpawner::SpawnEntry(const FAetherForgeAssetEntry& Entry, FCateg
 		}
 	}
 
+	if (Entry.ground_snap)
+	{
+		Z += BoundsGroundLift(Runtime.LoadedAsset.Get(), Entry.transform.scale);
+	}
+
 	// Wire transform is 2D location + yaw-only rotation + uniform scale; the plugin
 	// owns Z (just resolved above).
 	const FTransform Transform(
@@ -352,6 +357,18 @@ void FAetherForgeSpawner::SpawnAsActor(const FAetherForgeAssetEntry& Entry, FCat
 	if (SpawnClass && SpawnClass->IsChildOf(AActor::StaticClass()))
 	{
 		Spawned = World->SpawnActor(SpawnClass, &Transform, SpawnParams);
+		if (Spawned && Entry.ground_snap)
+		{
+			// Class/Blueprint assets have unknown pivot conventions (BoundsGroundLift
+			// returned 0): rest the actor's bounds bottom on the resolved ground Z.
+			FVector Origin, Extent;
+			Spawned->GetActorBounds(/*bOnlyCollidingComponents*/ false, Origin, Extent);
+			if (Extent.Z > UE_KINDA_SMALL_NUMBER)
+			{
+				Spawned->AddActorWorldOffset(
+					FVector(0.0, 0.0, Transform.GetLocation().Z - (Origin.Z - Extent.Z)));
+			}
+		}
 	}
 	else if (UStaticMesh* Mesh = Cast<UStaticMesh>(Asset))
 	{
@@ -436,12 +453,16 @@ void FAetherForgeSpawner::EndGeneration(const bool bDiscardPending)
 
 void FAetherForgeSpawner::FinalizeGeneration()
 {
-	UE_LOG(LogAetherForgeSpawner, Log, TEXT("Generation '%s' finalized: %d spawned, %d skipped."),
-		*ActiveGenerationId, Stats.SpawnedCount, Stats.SkippedCount);
+	const double Elapsed = FPlatformTime::Seconds() - GenerationStartSeconds;
+	UE_LOG(LogAetherForgeSpawner, Log,
+		TEXT("Generation '%s' finalized: %d spawned, %d skipped in %.1f s (%.0f assets/s); worst spawn tick %.2f ms (budget %.1f ms)."),
+		*ActiveGenerationId, Stats.SpawnedCount, Stats.SkippedCount, Elapsed,
+		Stats.AssetsPerSecond, Stats.MaxSpawnTickMs, SpawnBudgetSeconds * 1000.0);
 
 	ActiveTransaction.Reset(); // closes the scoped transaction => one undo step
 	bFinalizeWhenDrained = false;
 	Stats.PendingCount = 0;
+	GenerationFinalizedEvent.Broadcast(Stats);
 
 	// Release per-generation state. LoadHandles go with it; spawned actors/HISMs hold
 	// their own references to the assets from here on.
@@ -473,6 +494,16 @@ bool FAetherForgeSpawner::ResolveGroundZ(UWorld* World, const double X, const do
 		return true;
 	}
 	return false;
+}
+
+double FAetherForgeSpawner::BoundsGroundLift(const UObject* Asset, const double Scale)
+{
+	if (const UStaticMesh* Mesh = Cast<const UStaticMesh>(Asset))
+	{
+		const double MinZ = Mesh->GetBoundingBox().Min.Z;
+		return MinZ < 0.0 ? -MinZ * Scale : 0.0;
+	}
+	return 0.0;
 }
 
 UHierarchicalInstancedStaticMeshComponent* FAetherForgeSpawner::GetOrCreateHism(const FString& CategoryKey,

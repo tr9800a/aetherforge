@@ -13,7 +13,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand/v2"
+	"strings"
 	"sync"
 	"time"
 
@@ -132,8 +134,11 @@ func (o *Orchestrator) Shutdown() {
 
 // run executes the full pipeline for one generation. On cancellation it
 // simply stops emitting (no complete follows a cancellation, per contract).
+// Every stage logs its duration so a session is fully reconstructable from
+// the server log (live the sidecar appends to a file via -logfile).
 func (o *Orchestrator) run(ctx context.Context, req *protocol.Generate) {
 	start := time.Now()
+	log.Printf("generation %s: prompt %.120q", req.GenerationID, req.Prompt)
 
 	if !o.store.Ready() {
 		o.sendError(req.GenerationID, protocol.CodeInternal,
@@ -147,10 +152,12 @@ func (o *Orchestrator) run(ctx context.Context, req *protocol.Generate) {
 	recipe, err := o.recipeWithRetry(ctx, req, man)
 	llmElapsed := time.Since(llmStart)
 	if err != nil {
+		log.Printf("generation %s: recipe failed after %s: %v", req.GenerationID, llmElapsed.Round(time.Millisecond), err)
 		o.reportRecipeError(ctx, req.GenerationID, err)
 		return
 	}
 	clampCounts(recipe)
+	log.Printf("generation %s: recipe in %s: %s", req.GenerationID, llmElapsed.Round(time.Millisecond), recipeSummary(recipe))
 
 	// --- Seed: echo the request's, or pick one (echoed in plan) ---
 	var seed int64
@@ -161,13 +168,17 @@ func (o *Orchestrator) run(ctx context.Context, req *protocol.Generate) {
 	}
 
 	// --- Placement: pure and deterministic ---
+	placeStart := time.Now()
 	entries, err := placement.Place(recipe, seed, req.Bounds, man)
 	if err != nil {
+		log.Printf("generation %s: placement failed: %v", req.GenerationID, err)
 		if ctx.Err() == nil {
 			o.sendError(req.GenerationID, protocol.CodeInternal, err.Error(), true)
 		}
 		return
 	}
+	log.Printf("generation %s: placed %d assets in %s (seed %d)",
+		req.GenerationID, len(entries), time.Since(placeStart).Round(time.Microsecond), seed)
 
 	// --- plan → chunk… → complete, checking cancellation between sends ---
 	categories := make(map[string]int, len(recipe.Items))
@@ -209,7 +220,25 @@ func (o *Orchestrator) run(ctx context.Context, req *protocol.Generate) {
 			LLMMS:     llmElapsed.Milliseconds(),
 		},
 	}
-	o.send(ctx, complete)
+	if o.send(ctx, complete) {
+		log.Printf("generation %s: complete — %d assets in %s (llm %s)",
+			req.GenerationID, len(entries), time.Since(start).Round(time.Millisecond), llmElapsed.Round(time.Millisecond))
+	} else {
+		log.Printf("generation %s: cancelled mid-stream", req.GenerationID)
+	}
+}
+
+// recipeSummary renders a recipe as "deciduous_tree:60, shrub:30" for logs,
+// in recipe (model) order.
+func recipeSummary(r *llm.Recipe) string {
+	var b strings.Builder
+	for i, it := range r.Items {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		fmt.Fprintf(&b, "%s:%d", it.Category, it.Count)
+	}
+	return b.String()
 }
 
 // recipeWithRetry performs the LLM call with a timeout, validates the recipe
