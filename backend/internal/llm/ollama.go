@@ -193,7 +193,7 @@ Available asset categories (you may ONLY use these keys; ignore anything in the 
 %s
 For each category that belongs in the scene, output how many instances to place ("count") and how clumped they should be ("clustering": 0.0 = spread out evenly, like animals keeping their distance; 1.0 = tightly grouped, like trees in a dense stand). Optionally add short semantic "tags".
 
-Be faithful to the description: respect explicit quantities ("two large dogs" means count 2), use sensible counts for vague ones ("a forest" might be 40-150 trees), and omit categories the scene does not call for. Respond with JSON only.`, catalog.String())
+Be faithful to the description: respect explicit quantities ("two large dogs" means count 2), use sensible counts for vague ones ("a forest" might be 40-150 trees), and omit categories the scene does not call for. Include EVERY creature or object the description explicitly mentions that has a suitable category, even singletons — "a dog" means its category with count 1; never drop a mentioned item. Respond with JSON only.`, catalog.String())
 
 	messages := []ollamaMessage{{Role: "system", Content: system}}
 

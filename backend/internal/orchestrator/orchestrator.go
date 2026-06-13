@@ -164,7 +164,10 @@ func (o *Orchestrator) run(ctx context.Context, req *protocol.Generate) {
 	if req.Seed != nil {
 		seed = *req.Seed
 	} else {
-		seed = int64(rand.Uint64() >> 1) // non-negative; only chosen when caller wants variation
+		// Stay within JSON's exact-integer range (|seed| < 2^53): the seed is echoed
+		// in plan and the UE client parses JSON numbers through a double, so a wider
+		// seed would round and break exact reproducibility. 2^53 seeds is ample.
+		seed = int64(rand.Uint64() >> 11) // top 53 bits, non-negative
 	}
 
 	// --- Placement: pure and deterministic ---

@@ -256,3 +256,31 @@ func TestGenerateSeedOptional(t *testing.T) {
 		t.Fatalf("omitted seed must not reappear on the wire: %s", out)
 	}
 }
+
+// TestGenerateLargeSeedDecodes is a regression for the UE client serializing a
+// large int64 seed as a double in scientific notation, which the server then
+// could not unmarshal ("malformed generate message"). A seed sent as an exact
+// integer literal must decode into the exact int64.
+func TestGenerateLargeSeedDecodes(t *testing.T) {
+	const want int64 = 2445730091739913668 // a real server-chosen seed that triggered the bug
+	wire := []byte(`{"protocol_version":1,"type":"generate","generation_id":"g1",` +
+		`"prompt":"p","seed":2445730091739913668,` +
+		`"bounds":{"min":{"x":0,"y":0},"max":{"x":100,"y":100}}}`)
+	msg, err := Decode(wire)
+	if err != nil {
+		t.Fatalf("decode large integer-literal seed: %v", err)
+	}
+	gen := msg.(*Generate)
+	if gen.Seed == nil || *gen.Seed != want {
+		t.Fatalf("seed = %v, want %d (exact, no precision loss)", gen.Seed, want)
+	}
+
+	// A seed in scientific notation (what the old UE double path emitted) is NOT a
+	// valid integer literal and must be rejected, not silently truncated.
+	sci := []byte(`{"protocol_version":1,"type":"generate","generation_id":"g1",` +
+		`"prompt":"p","seed":2.4457300917399137e+18,` +
+		`"bounds":{"min":{"x":0,"y":0},"max":{"x":100,"y":100}}}`)
+	if _, err := Decode(sci); err == nil {
+		t.Fatal("a non-integer seed literal must be rejected, not accepted")
+	}
+}

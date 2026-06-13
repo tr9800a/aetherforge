@@ -12,6 +12,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"time"
 
 	"aetherforge/backend/internal/llm"
 	"aetherforge/backend/internal/server"
@@ -25,13 +27,31 @@ func main() {
 	recordDir := flag.String("record", "", "record LLM recipes to this directory")
 	replayDir := flag.String("replay", "", "replay LLM recipes from this directory (no model needed; overrides -llm)")
 	logFile := flag.String("logfile", "", "also append logs to this file (the UE sidecar manager points this at the project's Saved/Logs)")
+	watchParent := flag.Bool("watch-parent", false, "exit when the launching process dies (set by the UE sidecar manager so a hard editor exit cannot leak this process)")
 	flag.Parse()
+
+	// The editor normally terminates the sidecar on module shutdown, but a hard
+	// exit (crash, headless -ExecCmds Quit) skips that path. Orphaned children are
+	// reparented (ppid changes), which this watchdog turns into a clean exit.
+	if *watchParent {
+		parent := os.Getppid()
+		go func() {
+			for range time.Tick(2 * time.Second) {
+				if os.Getppid() != parent {
+					log.Printf("parent process (pid %d) exited; shutting down", parent)
+					os.Exit(0)
+				}
+			}
+		}()
+	}
 
 	// The plugin launches the sidecar hidden, so stderr goes nowhere; -logfile
 	// is how a live session stays diagnosable after the fact.
 	if *logFile != "" {
-		f, err := os.OpenFile(*logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
-		if err != nil {
+		// The log directory may not exist (macOS editors create Saved/Logs lazily).
+		if err := os.MkdirAll(filepath.Dir(*logFile), 0o755); err != nil {
+			log.Printf("cannot create -logfile directory for %s: %v (continuing on stderr only)", *logFile, err)
+		} else if f, err := os.OpenFile(*logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644); err != nil {
 			log.Printf("cannot open -logfile %s: %v (continuing on stderr only)", *logFile, err)
 		} else {
 			defer f.Close()

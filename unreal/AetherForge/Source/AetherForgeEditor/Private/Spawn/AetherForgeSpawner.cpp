@@ -240,6 +240,12 @@ bool FAetherForgeSpawner::SpawnTick(float /*DeltaTime*/)
 
 	// Budget-by-time, never fixed-count. Ground-snap traces count against the budget.
 	const double TickStart = FPlatformTime::Seconds();
+	if (Stats.SpawnedCount == 0)
+	{
+		// Start the throughput clock at the first real spawn, not at generate-click —
+		// otherwise assets/s averages in the LLM's thinking time.
+		GenerationStartSeconds = TickStart;
+	}
 	while (ReadyQueueHead < ReadyQueue.Num() &&
 		(FPlatformTime::Seconds() - TickStart) < SpawnBudgetSeconds)
 	{

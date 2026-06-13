@@ -69,6 +69,8 @@ private:
 
 	FProcHandle ProcessHandle;
 	uint32 ProcessId = 0;
+	int32 LastPort = 0;
+	FString SidecarLogPath;
 	EAetherForgeSidecarState State = EAetherForgeSidecarState::NotStarted;
 	FString LastError;
 	FTSTicker::FDelegateHandle WatchdogHandle;

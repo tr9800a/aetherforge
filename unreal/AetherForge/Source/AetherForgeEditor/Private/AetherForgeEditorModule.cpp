@@ -32,14 +32,16 @@ namespace
 	/** Project-relative path of the team-authored manifest data asset. */
 	const TCHAR* DefaultManifestObjectPath = TEXT("/AetherForge/DA_AetherForgeManifest.DA_AetherForgeManifest");
 
-	/** Hardcoded default generation region (cm) until the panel grows bounds controls (Phase 5). */
-	FAetherForgeWireBounds DefaultBounds()
+	/** Square placement region (cm), centered on the origin, from a side length in meters. */
+	FAetherForgeWireBounds BoundsForArea(const double AreaMeters)
 	{
+		// Clamp to something sane: a 10 m patch up to a 1 km region.
+		const double HalfCm = FMath::Clamp(AreaMeters, 10.0, 1000.0) * 100.0 / 2.0;
 		FAetherForgeWireBounds Bounds;
-		Bounds.min.x = -5000.0;
-		Bounds.min.y = -5000.0;
-		Bounds.max.x = 5000.0;
-		Bounds.max.y = 5000.0;
+		Bounds.min.x = -HalfCm;
+		Bounds.min.y = -HalfCm;
+		Bounds.max.x = HalfCm;
+		Bounds.max.y = HalfCm;
 		return Bounds;
 	}
 }
@@ -175,16 +177,17 @@ UAetherForgeManifest* FAetherForgeEditorModule::GetOrLoadManifest()
 
 void FAetherForgeEditorModule::EnsureBackend()
 {
-	if (!SidecarManager->IsRunning())
+	if (Client->IsConnected())
 	{
-		SidecarManager->Launch(SidecarPort);
+		return;
 	}
 
-	if (SidecarManager->GetState() == EAetherForgeSidecarState::Running && !Client->IsConnected())
-	{
-		ConnectAttemptsRemaining = MaxConnectAttempts;
-		TryConnect();
-	}
+	// Connect-first: a healthy server may already own the port (started externally,
+	// or left over from a previous session). Launching our own first would just die
+	// on bind and read as a sidecar crash — adopt whatever answers instead, and only
+	// launch on connection failure (see HandleConnectionError).
+	ConnectAttemptsRemaining = MaxConnectAttempts;
+	TryConnect();
 }
 
 void FAetherForgeEditorModule::TryConnect()
@@ -199,10 +202,22 @@ void FAetherForgeEditorModule::TryConnect()
 
 void FAetherForgeEditorModule::HandleConnectionError(const FString& Reason)
 {
-	// The sidecar may still be booting its WS listener; retry briefly before giving
-	// up (the panel surfaces the terminal failure).
-	if (ConnectAttemptsRemaining > 0 && SidecarManager->IsRunning())
+	// First failure usually means nothing owns the port yet: launch our sidecar and
+	// keep retrying briefly while its WS listener boots (the panel surfaces the
+	// terminal failure).
+	if (ConnectAttemptsRemaining > 0)
 	{
+		if (!SidecarManager->IsRunning())
+		{
+			SidecarManager->Launch(SidecarPort);
+			if (!SidecarManager->IsRunning())
+			{
+				// BinaryMissing or instant death: the sidecar error state has the detail.
+				UE_LOG(LogAetherForge, Error,
+					TEXT("Could not connect (%s) and the sidecar could not be launched."), *Reason);
+				return;
+			}
+		}
 		if (ReconnectTickerHandle.IsValid())
 		{
 			FTSTicker::GetCoreTicker().RemoveTicker(ReconnectTickerHandle);
@@ -222,7 +237,8 @@ void FAetherForgeEditorModule::HandleConnectionError(const FString& Reason)
 	}
 }
 
-FString FAetherForgeEditorModule::StartGeneration(const FString& Prompt, const TOptional<int64>& Seed)
+FString FAetherForgeEditorModule::StartGeneration(const FString& Prompt, const TOptional<int64>& Seed,
+	const double AreaMeters)
 {
 	if (!Client->IsConnected())
 	{
@@ -235,7 +251,7 @@ FString FAetherForgeEditorModule::StartGeneration(const FString& Prompt, const T
 		*FGuid::NewGuid().ToString(EGuidFormats::Digits).Left(8).ToLower());
 
 	Spawner->BeginGeneration(ActiveGenerationId, Prompt, GetOrLoadManifest());
-	Client->SendGenerate(ActiveGenerationId, Prompt, Seed, DefaultBounds());
+	Client->SendGenerate(ActiveGenerationId, Prompt, Seed, BoundsForArea(AreaMeters));
 	return ActiveGenerationId;
 }
 

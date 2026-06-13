@@ -77,15 +77,20 @@ private:
 	// --- helpers -------------------------------------------------------------
 	void StartGeneration(const TOptional<int64>& SeedOverride);
 	TOptional<int64> ParseSeedField() const;
+	double ParseAreaField() const;
 	void SetState(EAetherForgePanelState NewState);
 	void EnterErrorState(const FString& Message);
 	void AppendLog(const FString& Line);
 	void BindBackendEvents();
 	void UnbindBackendEvents();
 
+	/** Placement region side length used when the area field is empty or invalid. */
+	static constexpr double DefaultAreaMeters = 70.0;
+
 	// --- widgets -------------------------------------------------------------
 	TSharedPtr<SMultiLineEditableTextBox> PromptTextBox;
 	TSharedPtr<SEditableTextBox> SeedTextBox;
+	TSharedPtr<SEditableTextBox> AreaTextBox;
 	TSharedPtr<SListView<TSharedPtr<FString>>> LogListView;
 	TArray<TSharedPtr<FString>> LogEntries;
 

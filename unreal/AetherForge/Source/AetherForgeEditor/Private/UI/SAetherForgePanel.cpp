@@ -84,6 +84,16 @@ void SAetherForgePanel::Construct(const FArguments& /*InArgs*/)
 					"Optional reproducibility seed. Leave empty to let the server pick one (echoed back after planning)."))
 			]
 			+ SHorizontalBox::Slot()
+			.FillWidth(0.5f)
+			.Padding(0.0f, 0.0f, 8.0f, 0.0f)
+			[
+				SAssignNew(AreaTextBox, SEditableTextBox)
+				.HintText(LOCTEXT("AreaHint", "area: 70 m"))
+				.ToolTipText(LOCTEXT("AreaTooltip",
+					"Side length of the square placement region in meters, centered on the origin. "
+					"Keep it within your level's walkable ground: entries that ground-snap onto nothing are skipped."))
+			]
+			+ SHorizontalBox::Slot()
 			.AutoWidth()
 			.Padding(0.0f, 0.0f, 4.0f, 0.0f)
 			[
@@ -296,7 +306,7 @@ void SAetherForgePanel::StartGeneration(const TOptional<int64>& SeedOverride)
 		return;
 	}
 
-	const FString GenerationId = FAetherForgeEditorModule::Get().StartGeneration(Prompt, SeedOverride);
+	const FString GenerationId = FAetherForgeEditorModule::Get().StartGeneration(Prompt, SeedOverride, ParseAreaField());
 	if (GenerationId.IsEmpty())
 	{
 		EnterErrorState(TEXT("Not connected to the sidecar."));
@@ -324,6 +334,17 @@ TOptional<int64> SAetherForgePanel::ParseSeedField() const
 	}
 
 	return TOptional<int64>(); // non-numeric input: treat as unset
+}
+
+double SAetherForgePanel::ParseAreaField() const
+{
+	const FString AreaText = AreaTextBox->GetText().ToString().TrimStartAndEnd();
+	double AreaMeters = 0.0;
+	if (!AreaText.IsEmpty() && LexTryParseString(AreaMeters, *AreaText) && AreaMeters > 0.0)
+	{
+		return AreaMeters; // the module clamps to its sane range
+	}
+	return DefaultAreaMeters; // empty or non-numeric input
 }
 
 bool SAetherForgePanel::IsGenerateEnabled() const

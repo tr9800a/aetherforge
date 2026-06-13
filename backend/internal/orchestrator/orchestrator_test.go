@@ -217,6 +217,12 @@ func TestPipelinePicksSeedWhenOmitted(t *testing.T) {
 	if plan.Seed < 0 {
 		t.Fatalf("plan.seed = %d, want non-negative server-chosen seed", plan.Seed)
 	}
+	// Server-chosen seeds must stay in JSON's exact-integer range (|seed| < 2^53):
+	// the UE client parses the echoed seed through a double, so a wider value would
+	// round and break exact reproducibility.
+	if plan.Seed >= 1<<53 {
+		t.Fatalf("plan.seed = %d exceeds 2^53; not exactly representable as a JSON number", plan.Seed)
+	}
 	if _, ok := msgs[len(msgs)-1].(*protocol.Complete); !ok {
 		t.Fatalf("last message is %T, want complete", msgs[len(msgs)-1])
 	}

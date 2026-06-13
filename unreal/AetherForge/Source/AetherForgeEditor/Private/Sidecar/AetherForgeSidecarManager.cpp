@@ -65,9 +65,11 @@ void FAetherForgeSidecarManager::Launch(const int32 Port)
 	// The Go server takes a full listen address; keep it loopback-only (spec section 2).
 	// The sidecar runs hidden, so its log goes to a file next to the editor's own logs —
 	// per-generation prompt/recipe/timing lines stay diagnosable after the fact.
-	const FString SidecarLogPath = FPaths::ConvertRelativePathToFull(
+	LastPort = Port;
+	SidecarLogPath = FPaths::ConvertRelativePathToFull(
 		FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("Logs"), TEXT("AetherForgeSidecar.log")));
-	const FString Params = FString::Printf(TEXT("-addr 127.0.0.1:%d -logfile \"%s\""), Port, *SidecarLogPath);
+	const FString Params = FString::Printf(
+		TEXT("-addr 127.0.0.1:%d -watch-parent -logfile \"%s\""), Port, *SidecarLogPath);
 	const FString WorkingDirectory = FPaths::GetPath(BinaryPath);
 
 	UE_LOG(LogAetherForgeSidecar, Log, TEXT("Launching sidecar: %s %s"), *BinaryPath, *Params);
@@ -109,7 +111,9 @@ bool FAetherForgeSidecarManager::WatchdogTick(float /*DeltaTime*/)
 {
 	if (State == EAetherForgeSidecarState::Running && !IsRunning())
 	{
-		LastError = FString::Printf(TEXT("Sidecar process (pid %u) exited unexpectedly."), ProcessId);
+		LastError = FString::Printf(
+			TEXT("Sidecar process (pid %u) exited unexpectedly — see %s (common cause: port %d already in use by another process)."),
+			ProcessId, *SidecarLogPath, LastPort);
 		UE_LOG(LogAetherForgeSidecar, Error, TEXT("%s"), *LastError);
 		SetState(EAetherForgeSidecarState::Dead);
 	}

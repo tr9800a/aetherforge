@@ -147,7 +147,11 @@ FString FAetherForgeProtocol::SerializeGenerate(const FString& GenerationId, con
 	Root->SetStringField(TEXT("prompt"), Prompt);
 	if (Seed.IsSet())
 	{
-		Root->SetNumberField(TEXT("seed"), static_cast<double>(Seed.GetValue()));
+		// Write the seed as an exact integer literal, NOT via SetNumberField (which
+		// stores a double and serializes large values in scientific notation that the
+		// Go server cannot unmarshal into int64). FJsonValueNumberString emits the
+		// digits verbatim as an unquoted JSON number, lossless for the full int64 range.
+		Root->SetField(TEXT("seed"), MakeShared<FJsonValueNumberString>(LexToString(Seed.GetValue())));
 	}
 
 	const TSharedPtr<FJsonObject> BoundsObject = FJsonObjectConverter::UStructToJsonObject(Bounds);

@@ -50,10 +50,11 @@ public:
 	void EnsureBackend();
 
 	/**
-	 * Mint a generation_id, open the spawner's transaction, and send generate.
+	 * Mint a generation_id, open the spawner's transaction, and send generate with a
+	 * square placement region of AreaMeters per side, centered on the origin.
 	 * Returns the generation_id, or empty if not connected.
 	 */
-	FString StartGeneration(const FString& Prompt, const TOptional<int64>& Seed);
+	FString StartGeneration(const FString& Prompt, const TOptional<int64>& Seed, double AreaMeters);
 
 	/** Send cancel for the active generation and close its (partial, undoable) transaction. */
 	void CancelActiveGeneration();
